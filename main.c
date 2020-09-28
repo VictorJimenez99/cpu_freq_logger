@@ -12,7 +12,7 @@ int main(int argc, char** argv)
     long core_freq = 0;  // s.e.
 
     short sps = 100;         // samples per second;
-    long sampling_time = 3;  // seconds
+    long sampling_time = 30;  // seconds
 
     sampling_time *= sps;
     long sleep_time = 1000000 / sps;
@@ -24,7 +24,7 @@ int main(int argc, char** argv)
     unsigned int num_cpu = get_nprocs_conf();
     char path[100] = "";
 
-    fprintf(output, "\"cpu_id\", \"freq\", \"log_id\"\n");
+    fprintf(output, "\"cpu_id\", \"freq\", \"sample_id\"\n");
 
     /*For each second...*/
     for (int i = 0; i != sampling_time; i++)
