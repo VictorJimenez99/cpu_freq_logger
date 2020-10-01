@@ -6,13 +6,27 @@
 
 int main(int argc, char** argv)
 {
+    char path[100] = "";// this variable will be used two times
+                        // once to hold the name of the folder and once to hold
+                        // every cpu info file
+
+    if(argc < 2)
+    {
+        sprintf(path, "./freq_log.csv" );
+    }
+    else
+    {
+        //argv[1] should hold the name of the Output Dir
+        sprintf(path,"%s/%s", argv[1], "freq_log.csv");
+    }
+
     FILE* cur_file = NULL;  // holds the current system file from where the
                             // frequency is being read.
-    FILE* output = fopen("freq_log.csv", "w+");
+    FILE* output = fopen(path, "w+");
     long core_freq = 0;     // s.e.
 
-    short sps = 100;        // samples per second;
-    long sampling_time = 360;// seconds
+    short sps = 10;        // samples per second;
+    long sampling_time = 120;// seconds
 
     long const sleep_for = 1000000 / sps;
 
@@ -22,7 +36,6 @@ int main(int argc, char** argv)
     double time_exec;
     /*Get the number of cpus int the system*/
     unsigned int num_cpu = get_nprocs_conf();
-    char path[100] = "";
     long sample_id = 0;
 
     fprintf(output, "\"cpu_id\", \"freq\", \"sample_id\", \"time_passed\"\n");

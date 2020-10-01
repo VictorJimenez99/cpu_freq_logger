@@ -5,6 +5,13 @@ library(readr)
 library(patchwork)
 #detach("package:dplyr", unload = T)
 
+args<-commandArgs(trailingOnly = T)
+dir <- args[1]
+dir <- paste(dir,"/", sep = "")
+if(dir == "NA/")
+{
+  dir<-"./"
+}
 #Data in ----
 # Specify data_in
 col_type <-
@@ -13,7 +20,7 @@ col_type <-
        sample_id = col_double(),
        time_passed = col_factor())
 
-ds <- read_csv("freq_log.csv" , col_types = col_type)
+ds <- read_csv(paste(dir,"freq_log.csv",sep="") , col_types = col_type)
 rm("col_type")
 #plotting ----
 
@@ -27,10 +34,11 @@ general <- ggplot(ds) +
   ggtitle("Benchmark") +
   theme(legend.position = "none")
 
-ggsave("benchmark.png",
+ggsave(paste(dir,"benchmark.png", sep = ""),
        plot = general,
        width = 30,
        height = 5)
+
 
 
 #data----
@@ -40,6 +48,8 @@ grouped<-ds %>% group_by(cpu_id,time_passed)
 grouped<-summarise(grouped, mean(freq), .groups = "keep")
 grouped <- grouped %>% rename(mean = `mean(freq)`)
 grouped$time_passed = as.numeric(grouped$time_passed)-1
+
+write.csv(grouped,file = paste(dir,"mean_freq_per_sec.csv",sep = ""),row.names = F)
 
 #obtain scale
 xscale <- seq(min(grouped$time_passed), max(grouped$time_passed),(max(grouped$time_passed + 1)/4))
@@ -61,7 +71,7 @@ by_sec <- ggplot(grouped) +
 
 
 ggsave(
-  "benchmark_by_seconds.png",
+  paste(dir,"benchmark_by_seconds.png", sep = ""),
   plot = by_sec,
   width = 10,
   height = 5
@@ -70,7 +80,7 @@ ggsave(
 difference <- general / by_sec
 
 ggsave(
-  "benchmark_real_vs_mean.png",
+  paste(dir,"benchmark_real_vs_mean.png", sep = ""),
   plot = difference,
   width = 10,
   height = 5
