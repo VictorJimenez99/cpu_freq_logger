@@ -1,87 +1,124 @@
+#include <fcntl.h>
+#include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/sysinfo.h>
 #include <time.h>
 #include <unistd.h>
 
-int main(int argc, char** argv)
+#define SAMPLES_PER_SECOND 100
+
+void signal_handler(int id);
+
+bool interrupt_flag = false;
+
+int main(int argc, char **argv)
 {
-    char path[100] = "";// this variable will be used two times
-                        // once to hold the name of the folder and once to hold
-                        // every cpu info file
+    /*Variable declaration
+     * -----------------------------------------------------*/
+    int *cpu_files;  // it will hold every file descriptor
+    FILE *output;    //it will hold the result of the computation
+    unsigned int num_cpu;
+    long const sleeping_time = 1000000 / (SAMPLES_PER_SECOND);
+
+    char cpu_file_path[100];  // cpu_file descriptor
+    char string[20];          // it will hold the cpu_freq as read from the file
+    int read_bytes;           // number of bytes read
+
+    clock_t time_zero;
+    int time_elapsed;  // time since the beginning of the first sample
+
+    clock_t stopwatch;      // These two variables will measure the time
+    long computation_time;  // taken to process the loop
+
+    unsigned long sample_id;
+
+    /*
+     * Beginning of the program
+     * -------------------------------------*/
 
     if(argc < 2)
     {
-        sprintf(path, "./freq_log.csv" );
+        sprintf(cpu_file_path,"./freq_log.csv");
     }
     else
     {
-        //argv[1] should hold the name of the Output Dir
-        sprintf(path,"%s/%s", argv[1], "freq_log.csv");
+        sprintf(cpu_file_path, "%s/%s", argv[1],"freq_log.csv");
     }
 
-    FILE* cur_file = NULL;  // holds the current system file from where the
-                            // frequency is being read.
-    FILE* output = fopen(path, "w+");
-    long core_freq = 0;     // s.e.
 
-    short sps = 10;        // samples per second;
-    long sampling_time = 120;// seconds
+    output = fopen(cpu_file_path, "w+");
 
-    long const sleep_for = 1000000 / sps;
+    // bind interrupt signal
+    signal(SIGINT, signal_handler);
 
-    long sleep_time;        //internal logic
+    // get the number of cpu's available
+    num_cpu = get_nprocs_conf();
+    cpu_files = malloc(sizeof(int) * num_cpu);
 
-    clock_t t;
-    double time_exec;
-    /*Get the number of cpus int the system*/
-    unsigned int num_cpu = get_nprocs_conf();
-    long sample_id = 0;
-
-    fprintf(output, "\"cpu_id\", \"freq\", \"sample_id\", \"time_passed\"\n");
-
-    /*For each second...*/
-    for (unsigned int second = 0; second != sampling_time; second++)
+    for (unsigned int i = 0; i != num_cpu; i++)
     {
-        /*Take sps samples*/
-        for (unsigned int sample = 0; sample != sps; sample++)
-        {
-            t = clock();
-            /*For each cpu core...*/
-            for (unsigned int cpu = 0; cpu != num_cpu; cpu++)
-            {
-                /*log the frequency of the current core*/
-                sprintf(
-                    path,
-                    "/sys/devices/system/cpu/cpu%u/cpufreq/scaling_cur_freq",
-                    cpu);
-                cur_file = fopen(path, "r");
-                if (!fscanf(cur_file, "%lu", &core_freq))
-                {
-                    perror("reading error");
-                    exit(EXIT_FAILURE);
-                }
-
-                fprintf(output, "\"cpu%03u\", %f, %7ld, %5d\n", cpu,
-                        (double)core_freq / 1000000, sample_id, second);
-                fclose(cur_file);
-            }
-            sleep_time = sleep_for;
-            t = clock() - t;
-            time_exec = ((double)t) / CLOCKS_PER_SEC;
-            sleep_time = (float)sleep_time - (time_exec * 1000000) - 250;
-            if (sleep_time <= 0)
-            {
-                sleep_time = 0;
-            }
-            // fprintf(output, "exec_time = %fus\nsleep_time =%ldus\n",
-            //        time_exec * 1000000, sleep_time);
-            sample_id++;
-            usleep(sleep_time);
-        }
+        sprintf(cpu_file_path,
+                "/sys/devices/system/cpu/cpu%u/cpufreq/scaling_cur_freq", i);
+        cpu_files[i] = open(cpu_file_path, O_RDONLY);
     }
 
-    /* clean_up */
-    fclose(output);
-    return 0;
+    time_zero = time(NULL);
+    sample_id = 0;
+
+    fprintf(output,"\"cpu_id\", \"freq\", \"sample_id\", \"time_passed\"\n");
+
+    // synchronize time_zero
+    while (time(NULL) - time_zero == 0)
+    {
+    }
+
+    time_zero = time(NULL);
+
+    /* Gather at most SAMPLES_PER_SECOND*/
+    while (interrupt_flag == false)
+    {
+        stopwatch = clock();
+        // For each CPU Core...
+        for (int cpu = num_cpu - 1; cpu >= 0; cpu--)
+        {
+            read_bytes = pread(cpu_files[cpu], string, sizeof(char) * 20, 0);
+
+            // validation
+            if (read_bytes == -1)
+            {
+                printf("Something went wrong while gathering data ABORT\n");
+                interrupt_flag = true;
+                break;
+            }
+
+            // string[read_bytes] = '\n';
+            string[read_bytes - 1] = '\0';
+
+            time_elapsed = time(NULL) - time_zero;
+            fprintf(output,"\"cpu%03d\", %s, %5lu , %4d\n", cpu,
+                   string,sample_id, time_elapsed);
+        }
+        sample_id++;
+
+        stopwatch = clock() - stopwatch;
+        computation_time = 1000000 * ((double)stopwatch) / CLOCKS_PER_SEC;
+        if (computation_time <= 0)
+        {
+            computation_time = sleeping_time;
+        }
+        usleep(sleeping_time - computation_time);
+    }
+
+    /*Clean up*/
+    printf("\nCleaning up\n");
+    for (int i = 0; i != num_cpu; i++)
+    {
+        close(cpu_files[i]);
+    }
+
+    free(cpu_files);
 }
+
+void signal_handler(int id) { interrupt_flag = true; }
