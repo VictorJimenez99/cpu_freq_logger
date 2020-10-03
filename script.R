@@ -54,6 +54,7 @@ write.csv(grouped,file = paste(dir,"mean_freq_per_sec.csv",sep = ""),row.names =
 
 #obtain scale
 xscale <- seq(min(grouped$time_passed), max(grouped$time_passed),(max(grouped$time_passed + 1)/4))
+xscale <- trunc(xscale)
 #xscale <- head(xscale, -1)
 xscale <- c(xscale,max(grouped$time_passed))
 
