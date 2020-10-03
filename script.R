@@ -3,7 +3,6 @@ library(tibble)
 suppressMessages(library(dplyr, quietly = TRUE))
 library(readr)
 library(patchwork)
-#detach("package:dplyr", unload = T)
 
 args<-commandArgs(trailingOnly = T)
 dir <- args[1]
@@ -20,11 +19,17 @@ col_type <-
        sample_id = col_double(),
        time_passed = col_factor())
 
+print("Eloo1")
+
 ds <- read_csv(paste(dir,"freq_log.csv",sep="") , col_types = col_type)
 rm("col_type","args")
 #plotting ----
 
 ds$freq = ds$freq/1000000
+
+print("Eloo2")
+
+
 
 general <- ggplot(ds) +
   scale_y_continuous(breaks = seq(floor(min(ds$freq)), ceiling(max(ds$freq)), .5) , limits = c(0,ceiling(max(ds$freq))) ) +
@@ -50,6 +55,9 @@ grouped<-summarise(grouped, mean(freq), .groups = "keep")
 grouped <- grouped %>% rename(mean = `mean(freq)`)
 grouped$time_passed = as.numeric(grouped$time_passed)-1
 
+print("Eloo3")
+
+
 write.csv(grouped,file = paste(dir,"mean_freq_per_sec.csv",sep = ""),row.names = F)
 
 #obtain scale
@@ -70,35 +78,23 @@ by_sec <- ggplot(grouped) +
   ggtitle("Time ~ Mean Frequency") +
   theme(legend.position = "none")
 
-
+h  <-length(unique(grouped$cpu_id))/2
 
 ggsave(
   paste(dir,"benchmark_by_seconds.png", sep = ""),
   plot = by_sec,
-  width = 25,
-  height = 10
+  width = 10,
+  height = 2*h
 )
 
 difference <- general / by_sec
 
+
+print("Eloo4")
 ggsave(
   paste(dir,"benchmark_real_vs_mean.png", sep = ""),
   plot = difference,
   width = 20,
   height = 10
 )
-
-
-# by_sec <- ggplot(grouped) + 
-#   scale_x_time(breaks = xscale) +
-#   scale_y_continuous(breaks = yscale , limits = c(0,ceiling(max(ds$freq))) ) +  
-#   geom_line(aes(time_passed, mean, col=cpu_id)) + 
-#   xlab("Time") + 
-#   ylab("Frequency") + 
-#   ggtitle("Time ~ Mean Frequency") +
-#   theme(legend.position = "none")
-# 
-
-
-
 
