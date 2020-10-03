@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash 
 DATE=$(date +\"%F_%H:%M:%S\")
 DIR=$DATE
 DIR="${DIR%\"}"
@@ -12,9 +12,10 @@ LOG="$DIR/log.txt"
 echo $DATE > $LOG
 
 echo "Gathering data..."
-$(\time -o $LOG -a -f 'Total Time Gathering Data: %E\n' ./freq_logger $DIR >> $LOG)
+trap "" 2
+(trap 2;\time -o $LOG -a -f 'Total Time Gathering Data: %E\n' ./freq_logger $DIR >> $LOG) 
 
-
+echo ""
 echo "Generating Reports..."
 Rscript script.R $DIR >> $LOG
 

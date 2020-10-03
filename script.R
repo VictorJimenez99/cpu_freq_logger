@@ -24,10 +24,11 @@ ds <- read_csv(paste(dir,"freq_log.csv",sep="") , col_types = col_type)
 rm("col_type")
 #plotting ----
 
+ds$freq = ds$freq/1000000
 
 general <- ggplot(ds) +
   scale_y_continuous(breaks = seq(floor(min(ds$freq)), ceiling(max(ds$freq)), .5) , limits = c(0,ceiling(max(ds$freq))) ) +
-  scale_x_continuous(breaks = waiver()) +
+  scale_x_continuous() +
   geom_line(aes(x = sample_id, y = freq, col = cpu_id)) +
   facet_wrap(~ cpu_id) +
   xlab("Sample") + ylab("Frequency") +
