@@ -32,7 +32,7 @@ and patchwork. To do so open up an R environment writing
 
     R
 
-in the Terminal. Once it's open you need to type the following commands into it:
+in the Terminal. Once it's opened you need to type the following commands into it:
 
     install.packages("ggplot2")
     install.packages("dplyr")
