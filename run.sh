@@ -12,6 +12,7 @@ LOG="$DIR/log.txt"
 echo $DATE > $LOG
 
 echo "Gathering data..."
+echo "Use SIGINT (Ctrl + C) to stop and continue with the execution..."
 trap "" 2
 (trap 2;\time -o $LOG -a -f 'Total Time Gathering Data: %E\n' ./freq_logger $DIR >> $LOG) 
 
