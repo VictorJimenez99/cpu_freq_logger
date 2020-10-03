@@ -21,7 +21,7 @@ col_type <-
        time_passed = col_factor())
 
 ds <- read_csv(paste(dir,"freq_log.csv",sep="") , col_types = col_type)
-rm("col_type")
+rm("col_type","args")
 #plotting ----
 
 ds$freq = ds$freq/1000000
@@ -75,8 +75,8 @@ by_sec <- ggplot(grouped) +
 ggsave(
   paste(dir,"benchmark_by_seconds.png", sep = ""),
   plot = by_sec,
-  width = 10,
-  height = 5
+  width = 25,
+  height = 10
 )
 
 difference <- general / by_sec
@@ -84,8 +84,21 @@ difference <- general / by_sec
 ggsave(
   paste(dir,"benchmark_real_vs_mean.png", sep = ""),
   plot = difference,
-  width = 10,
-  height = 5
+  width = 20,
+  height = 10
 )
+
+
+# by_sec <- ggplot(grouped) + 
+#   scale_x_time(breaks = xscale) +
+#   scale_y_continuous(breaks = yscale , limits = c(0,ceiling(max(ds$freq))) ) +  
+#   geom_line(aes(time_passed, mean, col=cpu_id)) + 
+#   xlab("Time") + 
+#   ylab("Frequency") + 
+#   ggtitle("Time ~ Mean Frequency") +
+#   theme(legend.position = "none")
+# 
+
+
 
 
