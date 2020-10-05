@@ -1,5 +1,4 @@
-# cpu_freq_logger
-
+# Cpu Frequency Logger
 
 
 ![Result from data using R.](./Example1/benchmark_real_vs_mean.png)
