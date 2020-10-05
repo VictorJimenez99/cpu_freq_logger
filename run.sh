@@ -10,6 +10,9 @@ echo "$DIR created..."
 
 LOG="$DIR/log.txt"
 echo $DATE > $LOG
+echo "" >> $LOG
+echo "" >> $LOG
+
 
 echo "Gathering data..."
 echo "Use SIGINT (Ctrl + C) to stop and continue with the execution..."
@@ -18,7 +21,10 @@ trap "" 2
 
 echo ""
 echo "Generating Reports..."
+echo "" >> $LOG
+echo "Executing R script..." >> $LOG
 Rscript script.R $DIR >> $LOG
+echo "Done..." >> $LOG
 
 
 echo "A Log File was created under the name: log.txt"

@@ -1,8 +1,10 @@
+cat("loading libraries...\n")
 library(ggplot2)
 library(tibble)
 suppressMessages(library(dplyr, quietly = TRUE))
 library(readr)
 library(patchwork)
+cat("Done\n")
 
 args<-commandArgs(trailingOnly = T)
 dir <- args[1]
@@ -19,17 +21,17 @@ col_type <-
        sample_id = col_double(),
        time_passed = col_factor())
 
-print("Eloo1")
+cat("Reading .csv file...\n")
 
 ds <- read_csv(paste(dir,"freq_log.csv",sep="") , col_types = col_type)
 rm("col_type","args")
 #plotting ----
 
+cat("Formatting data...\n")
 ds$freq = ds$freq/1000000
 
-print("Eloo2")
 
-
+cat("Generating plots\n")
 
 general <- ggplot(ds) +
   scale_y_continuous(breaks = seq(floor(min(ds$freq)), ceiling(max(ds$freq)), .5) , limits = c(0,ceiling(max(ds$freq))) ) +
@@ -50,12 +52,12 @@ ggsave(paste(dir,"benchmark.png", sep = ""),
 #data----
 
 # Create a tibble with the mean frequency per second
+cat("Mutating and extracting data...\n")
 grouped<-ds %>% group_by(cpu_id,time_passed) 
 grouped<-summarise(grouped, mean(freq), .groups = "keep")
 grouped <- grouped %>% rename(mean = `mean(freq)`)
 grouped$time_passed = as.numeric(grouped$time_passed)-1
 
-print("Eloo3")
 
 
 write.csv(grouped,file = paste(dir,"mean_freq_per_sec.csv",sep = ""),row.names = F)
@@ -90,7 +92,6 @@ ggsave(
 difference <- general / by_sec
 
 
-print("Eloo4")
 ggsave(
   paste(dir,"benchmark_real_vs_mean.png", sep = ""),
   plot = difference,
@@ -98,3 +99,4 @@ ggsave(
   height = 10
 )
 
+cat("The Script executed without any problems...\n")

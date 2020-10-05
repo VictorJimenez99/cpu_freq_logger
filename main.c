@@ -38,9 +38,11 @@ int main(int argc, char **argv)
      * Beginning of the program
      * -------------------------------------*/
 
+    printf("Freq_logger...\nGetting Data about Output Directory\n");
     if(argc < 2)
     {
         sprintf(cpu_file_path,"./freq_log.csv");
+        printf("Solution created in current directory (freq_log.csv)\n");
     }
     else
     {
@@ -61,7 +63,9 @@ int main(int argc, char **argv)
     {
         sprintf(cpu_file_path,
                 "/sys/devices/system/cpu/cpu%u/cpufreq/scaling_cur_freq", i);
+        printf("opening file: %s...         ",cpu_file_path);
         cpu_files[i] = open(cpu_file_path, O_RDONLY);
+        printf("Success...\n");
     }
 
     time_zero = time(NULL);
@@ -118,6 +122,7 @@ int main(int argc, char **argv)
         close(cpu_files[i]);
     }
 
+    printf("All files were closed successfully");
     free(cpu_files);
 }
 
