@@ -68,26 +68,57 @@ xscale <- trunc(xscale)
 #xscale <- head(xscale, -1)
 xscale <- c(xscale,max(grouped$time_passed))
 
-yscale <- seq(floor(min(ds$freq)),ceiling(max(ds$freq)),.5)
+yscale <- seq(floor(min(ds$freq)),ceiling(max(ds$freq)) + .5,.5)
+h  <-length(unique(grouped$cpu_id))/2
 
-by_sec <- ggplot(grouped) + 
+unique_cpus <- unique(grouped$cpu_id)
+improved_df <- tibble(x=c(), y=c(), cpu_id=c())
+
+for (cpu_name in unique_cpus) {
+  cur_cpu <- grouped %>% filter(cpu_id == cpu_name)
+  spline_cpu <- as.data.frame(spline(cur_cpu$time_passed,cur_cpu$mean))
+  spline_cpu$cpu_id <- cur_cpu$cpu_id
+  
+  improved_df<-bind_rows(improved_df,spline_cpu)
+}
+
+by_sec<-ggplot(grouped) + 
   scale_x_time(breaks = xscale) +
-  scale_y_continuous(breaks = seq(floor(min(ds$freq)), ceiling(max(ds$freq)), .5) , limits = c(floor(min(ds$freq)),ceiling(max(ds$freq))) ) +
-  geom_line(aes(time_passed, mean, col=cpu_id)) + 
+  scale_y_continuous(breaks = seq(floor(min(ds$freq)), ceiling(max(ds$freq)) + .5 , .5) , limits = c(floor(min(ds$freq)),ceiling(max(ds$freq))+.5) ) +
+  geom_line(data = improved_df,aes(x, y, col=cpu_id)) +
+  geom_point(aes(x = time_passed, y = mean, color = cpu_id),size = .4) + 
   facet_wrap(~cpu_id) + 
   xlab("Time") + 
   ylab("Frequency") + 
   ggtitle("Time ~ Mean Frequency") +
   theme(legend.position = "none")
-
-h  <-length(unique(grouped$cpu_id))/2
-
 ggsave(
-  paste(dir,"benchmark_by_seconds.png", sep = ""),
+  paste(dir,"spline_mean_freq.png", sep = ""),
   plot = by_sec,
   width = 15,
   height = 2*h
 )
+
+
+# 
+# by_sec <- ggplot(grouped) + 
+#   scale_x_time(breaks = xscale) +
+#   scale_y_continuous(breaks = seq(floor(min(ds$freq)), ceiling(max(ds$freq)), .5) , limits = c(floor(min(ds$freq)),ceiling(max(ds$freq))) ) +
+#   geom_line(aes(time_passed, mean, col=cpu_id)) + 
+#   facet_wrap(~cpu_id) + 
+#   xlab("Time") + 
+#   ylab("Frequency") + 
+#   ggtitle("Time ~ Mean Frequency") +
+#   theme(legend.position = "none")
+# 
+# 
+# 
+# ggsave(
+#   paste(dir,"benchmark_by_seconds.png", sep = ""),
+#   plot = by_sec,
+#   width = 15,
+#   height = 2*h
+# )
 
 difference <- general / by_sec
 
@@ -100,3 +131,10 @@ ggsave(
 )
 
 cat("The Script executed without any problems...\n")
+
+
+
+
+
+
+
