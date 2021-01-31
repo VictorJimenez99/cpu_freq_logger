@@ -12,13 +12,20 @@
 void signal_handler(int id);
 
 bool interrupt_flag = false;
+void watch_cpu(int argc, char **argv);
 
-int main(int argc, char **argv)
+// this function can be set to run in one thread so in the future someone can add 
+// or spawn new threads in order to watch ram and temperatures for example.
+int main(int argc, char **argv) { watch_cpu(argc, argv); }
+
+void signal_handler(int id) { interrupt_flag = true; }
+
+void watch_cpu(int argc, char **argv)
 {
     /*Variable declaration
      * -----------------------------------------------------*/
     int *cpu_files;  // it will hold every file descriptor
-    FILE *output;    //it will hold the result of the computation
+    FILE *output;    // it will hold the result of the computation
     unsigned int num_cpu;
     long const sleeping_time = 1000000 / (SAMPLES_PER_SECOND);
 
@@ -39,16 +46,15 @@ int main(int argc, char **argv)
      * -------------------------------------*/
 
     printf("Freq_logger...\nGetting Data about Output Directory\n");
-    if(argc < 2)
+    if (argc < 2)
     {
-        sprintf(cpu_file_path,"./freq_log.csv");
+        sprintf(cpu_file_path, "./freq_log.csv");
         printf("Solution created in current directory (freq_log.csv)\n");
     }
     else
     {
-        sprintf(cpu_file_path, "%s/%s", argv[1],"freq_log.csv");
+        sprintf(cpu_file_path, "%s/%s", argv[1], "freq_log.csv");
     }
-
 
     output = fopen(cpu_file_path, "w+");
 
@@ -63,7 +69,7 @@ int main(int argc, char **argv)
     {
         sprintf(cpu_file_path,
                 "/sys/devices/system/cpu/cpu%u/cpufreq/scaling_cur_freq", i);
-        printf("opening file: %s...         ",cpu_file_path);
+        printf("opening file: %s...         ", cpu_file_path);
         cpu_files[i] = open(cpu_file_path, O_RDONLY);
         printf("Success...\n");
     }
@@ -71,7 +77,7 @@ int main(int argc, char **argv)
     time_zero = time(NULL);
     sample_id = 0;
 
-    fprintf(output,"\"cpu_id\", \"freq\", \"sample_id\", \"time_passed\"\n");
+    fprintf(output, "\"cpu_id\", \"freq\", \"sample_id\", \"time_passed\"\n");
 
     // synchronize time_zero
     while (time(NULL) - time_zero == 0)
@@ -101,8 +107,8 @@ int main(int argc, char **argv)
             string[read_bytes - 1] = '\0';
 
             time_elapsed = time(NULL) - time_zero;
-            fprintf(output,"\"cpu%03d\", %s, %5lu , %4d\n", cpu,
-                   string,sample_id, time_elapsed);
+            fprintf(output, "\"cpu%03d\", %s, %5lu , %4d\n", cpu, string,
+                    sample_id, time_elapsed);
         }
         sample_id++;
 
@@ -126,4 +132,3 @@ int main(int argc, char **argv)
     free(cpu_files);
 }
 
-void signal_handler(int id) { interrupt_flag = true; }
